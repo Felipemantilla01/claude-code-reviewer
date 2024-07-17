@@ -43,31 +43,34 @@ const main = async () => {
   core.info(`Prompt text: ${promptText}`);
 
   const initialPrompt = `
-    You are an AI assistant tasked with suggesting changes to a GitHub repository based on a pull request comment or description.
-    Below is the current structure and content of the repository, followed by the latest comment or pull request description.
-    Please analyze the repository content and the provided text, then suggest appropriate changes.
+      You are an AI assistant tasked with suggesting changes to a GitHub repository based on a pull request comment or description.
+      Below is the current structure and content of the repository, followed by the latest comment or pull request description.
+      Please analyze the repository content and the provided text, then suggest appropriate changes.
 
-    Repository content (minified):
-    ${repoContentString}
+      Repository content (minified):
+      ${repoContentString}
+      
+      Description/Comment:
+      ${promptText}
+      
+      <instructions>
+      Based on the repository content and the provided text, suggest changes to the codebase.
+      Format your response as follows:
+      1. For each file that needs changes, start with "File: [filepath]"
+      2. For each suggestion in that file, use the format:
+         "Lines [start]-[end]: [suggestion]"
+      3. If you want to suggest a new commit, use the format:
+         "Commit: [commit message]"
+         followed by the changes for that commit in the same format as above.
+      4. If no changes are necessary or if the request is unclear, state so explicitly.
+      Consider the overall architecture and coding style of the existing codebase when suggesting changes.
+      If not directly related to the requested changes, don't make suggestions for those parts. We want to keep consistency and stability with each iteration.
+      If the provided text is vague, don't make any suggestions.
+      When you have finished all suggestions, end your response with the line END_OF_SUGGESTIONS.
+      </instructions>
 
-    Description/Comment:
-    ${promptText}
-
-    <instructions>
-    Based on the repository content and the provided text, suggest changes to the codebase. 
-    Format your response as a series of git commands that can be executed to make the changes.
-    Each command should be on a new line and start with 'git'.
-    For file content changes, use 'git add' followed by the file path, then provide the new content between <<<EOF and EOF>>> markers.
-    Ensure all file paths are valid and use forward slashes.
-    Consider the overall architecture and coding style of the existing codebase when suggesting changes.
-    If not directly related to the requested changes, don't make code changes to those parts. we want to keep consistency and stability with each iteration
-    If the provided text is vague, don't make any changes.
-    If no changes are necessary or if the request is unclear, state so explicitly.
-    When you have finished suggesting all changes, end your response with the line END_OF_SUGGESTIONS.
-    </instructions>
-
-    Base branch: ${pullRequest.base.ref}
-  `;
+      Base branch: ${pullRequest.base.ref}
+    `;
 
   const message = await anthropic.messages.create({
     model: "claude-3-5-sonnet-20240620",
@@ -79,25 +82,76 @@ const main = async () => {
 
   core.info(`Claude's response: ${claudeResponse}`);
 
-  // Extract and format the suggested changes
-  const suggestions = claudeResponse.split('\n').map((command) => command.trim()).filter((command) => command);
+  // Parse Claude's response into a structured format
+  const suggestions = parseSuggestions(claudeResponse);
 
-  let suggestionBody = "Claude 3.5 has suggested the following changes based on the latest comment or pull request description:\n\n";
-  suggestions.forEach((suggestion) => {
-    suggestionBody += `${suggestion}\n`;
-  });
-
-  suggestionBody += "\nPlease review the above suggestions and apply them manually if they are appropriate.";
+  // Create a comment with the suggestions
+  const commentBody = formatSuggestionsComment(suggestions);
 
   await octokit.rest.issues.createComment({
     owner,
     repo,
     issue_number: pull_number,
-    body: suggestionBody,
+    body: commentBody,
   });
 
-  core.info("Suggestions posted as a comment.");
+  core.info("Suggestions have been posted as a comment on the PR.");
+}
 
+function parseSuggestions(response) {
+  const suggestions = [];
+  let currentFile = null;
+  let currentCommit = null;
+
+  const lines = response.split('\n');
+  for (const line of lines) {
+    if (line.startsWith('File: ')) {
+      currentFile = line.slice(6).trim();
+    } else if (line.startsWith('Commit: ')) {
+      currentCommit = {
+        message: line.slice(8).trim(),
+        changes: []
+      };
+      suggestions.push(currentCommit);
+    } else if (line.startsWith('Lines ')) {
+      const [, lineRange, suggestion] = line.match(/Lines (\d+-\d+): (.+)/);
+      const change = { lineRange, suggestion };
+      if (currentCommit) {
+        currentCommit.changes.push({ file: currentFile, ...change });
+      } else {
+        suggestions.push({ file: currentFile, ...change });
+      }
+    } else if (line === 'END_OF_SUGGESTIONS') {
+      break;
+    }
+  }
+
+  return suggestions;
+}
+
+function formatSuggestionsComment(suggestions) {
+  let comment = "## Suggestions from Claude 3.5\n\n";
+
+  if (suggestions.length === 0) {
+    comment += "No changes are necessary based on the current request, or the request was unclear.\n";
+  } else {
+    for (const suggestion of suggestions) {
+      if (suggestion.message) {
+        // This is a commit suggestion
+        comment += `### Suggested Commit: ${suggestion.message}\n\n`;
+        for (const change of suggestion.changes) {
+          comment += `**File:** ${change.file}\n`;
+          comment += `**Lines ${change.lineRange}:** ${change.suggestion}\n\n`;
+        }
+      } else {
+        // This is a direct file change suggestion
+        comment += `**File:** ${suggestion.file}\n`;
+        comment += `**Lines ${suggestion.lineRange}:** ${suggestion.suggestion}\n\n`;
+      }
+    }
+  }
+
+  return comment;
 }
 
 main();
