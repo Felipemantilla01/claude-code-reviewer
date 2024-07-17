@@ -37286,7 +37286,7 @@ ${pullRequest.body}`;
     max_tokens: 1024,
     messages: [{ role: "user", content: initialPrompt }]
   });
-  core.info(`Anthropic response: ${message}`);
+  core.info(`Anthropic response: ${JSON.stringify(message, null, 2)}`);
 };
 main();
 /*! Bundled license information:
