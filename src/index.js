@@ -34,7 +34,6 @@ const main = async () => {
       .map(([file, content]) => `File: ${file}\n\n${minifyContent(content)}`)
       .join('\n\n---\n\n');
 
-    core.info(`Repository content: ${repoContentString}`);
 
     let promptText;
     if (context.payload.comment) {
@@ -42,6 +41,8 @@ const main = async () => {
     } else {
       promptText = `Pull Request Description:\n${pullRequest.body}`;
     }
+
+    core.info(`Prompt text: ${promptText}`);
 
     const initialPrompt = `
       You are an AI assistant tasked with suggesting changes to a GitHub repository based on a pull request comment or description.
