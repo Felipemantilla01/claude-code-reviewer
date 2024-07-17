@@ -1,6 +1,6 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { getRepositoryContent } = require('./utils');
+const { getRepositoryContent, minifyContent} = require('./utils');
 
 const main = async () => {
 

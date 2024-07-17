@@ -23454,7 +23454,7 @@ var require_utils5 = __commonJS({
 // src/index.js
 var core = require_core();
 var github = require_github();
-var { getRepositoryContent } = require_utils5();
+var { getRepositoryContent, minifyContent } = require_utils5();
 var main = async () => {
   const token = core.getInput("github-token", { required: true });
   if (!token) {
