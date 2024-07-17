@@ -37224,7 +37224,7 @@ var require_sdk = __commonJS({
 var core = require_core();
 var github = require_github();
 var { getRepositoryContent, minifyContent } = require_utils5();
-var Antropic = require_sdk();
+var Anthropic = require_sdk();
 var main = async () => {
   const token = core.getInput("github-token", { required: true });
   const octokit = github.getOctokit(token);

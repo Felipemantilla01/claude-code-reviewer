@@ -1,7 +1,7 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 const { getRepositoryContent, minifyContent} = require('./utils');
-const Antropic = require('@anthropic-ai/sdk');
+const Anthropic = require('@anthropic-ai/sdk');
 
 const main = async () => {
 
