@@ -37317,11 +37317,44 @@ ${pullRequest.body}`;
           branch: pullRequest.head.ref
         });
       } catch (error) {
+        if (error.status === 404) {
+          await octokit.rest.repos.createOrUpdateFileContents({
+            owner,
+            repo,
+            path: filePath,
+            message: `Create file suggested by Claude 3.5`,
+            content: Buffer.from(content).toString("base64"),
+            branch: pullRequest.head.ref
+          });
+        } else {
+          throw error;
+        }
         throw error;
       }
       console.log("createOrUpdateFileContents", filePath);
       core.info(`Updated ${filePath}`);
     }
+  }
+  const { data: files } = await octokit.rest.pulls.listFiles({
+    owner,
+    repo,
+    pull_number
+  });
+  if (files.length > 0) {
+    await octokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: pull_number,
+      body: "Changes suggested by Claude 3.5 have been applied to this PR based on the latest comment. Please review the changes."
+    });
+  } else {
+    core.info("No changes to commit.");
+    await octokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: pull_number,
+      body: "Claude 3.5 analyzed the latest comment and the repository content but did not suggest any changes."
+    });
   }
 };
 main();
