@@ -37267,19 +37267,16 @@ ${pullRequest.body}`;
       ${promptText}
       
       <instructions>
-      Based on the repository content and the provided text, suggest changes to the codebase.
-      Format your response as follows:
-      1. For each file that needs changes, start with "File: [filepath]"
-      2. For each suggestion in that file, use the format:
-         "Lines [start]-[end]: [suggestion]"
-      3. If you want to suggest a new commit, use the format:
-         "Commit: [commit message]"
-         followed by the changes for that commit in the same format as above.
-      4. If no changes are necessary or if the request is unclear, state so explicitly.
+      Based on the repository content and the provided text, suggest changes to the codebase. 
+      Format your response as a series of git commands that can be executed to make the changes.
+      Each command should be on a new line and start with 'git'.
+      For file content changes, use 'git add' followed by the file path, then provide the new content between <<<EOF and EOF>>> markers.
+      Ensure all file paths are valid and use forward slashes.
       Consider the overall architecture and coding style of the existing codebase when suggesting changes.
-      If not directly related to the requested changes, don't make suggestions for those parts. We want to keep consistency and stability with each iteration.
-      If the provided text is vague, don't make any suggestions.
-      When you have finished all suggestions, end your response with the line END_OF_SUGGESTIONS.
+      If not directly related to the requested changes, don't make code changes to those parts. we want to keep consistency and stability with each iteration
+      If the provided text is vague, don't make any changes.
+      If no changes are necessary or if the request is unclear, state so explicitly.
+      When you have finished suggesting all changes, end your response with the line END_OF_SUGGESTIONS.
       </instructions>
 
       Base branch: ${pullRequest.base.ref}
@@ -37291,77 +37288,75 @@ ${pullRequest.body}`;
   });
   const claudeResponse = message.content.map((content) => content.text).join("\n");
   core.info(`Claude's response: ${claudeResponse}`);
-  const suggestions = parseSuggestions(claudeResponse);
-  const commentBody = formatSuggestionsComment(suggestions);
-  await octokit.rest.issues.createComment({
+  const commands = claudeResponse.split("\n").map((command) => command.trim()).filter((command) => command);
+  for (const command of commands) {
+    if (command.startsWith("git add")) {
+      const filePath = command.split(" ").pop();
+      const contentStart = claudeResponse.indexOf("<<<EOF", claudeResponse.indexOf(command));
+      const contentEnd = claudeResponse.indexOf("EOF>>>", contentStart);
+      if (contentStart === -1 || contentEnd === -1) {
+        core.error(`Invalid content markers for file: ${filePath}`);
+        continue;
+      }
+      console.log("command", command);
+      const content = claudeResponse.slice(contentStart + 6, contentEnd).trim();
+      try {
+        const { data: fileData } = await octokit.rest.repos.getContent({
+          owner,
+          repo,
+          path: filePath,
+          ref: pullRequest.head.ref
+        });
+        await octokit.rest.repos.createOrUpdateFileContents({
+          owner,
+          repo,
+          path: filePath,
+          message: `Apply changes suggested by Claude 3.5`,
+          content: Buffer.from(content).toString("base64"),
+          sha: fileData.sha,
+          branch: pullRequest.head.ref
+        });
+      } catch (error) {
+        if (error.status === 404) {
+          await octokit.rest.repos.createOrUpdateFileContents({
+            owner,
+            repo,
+            path: filePath,
+            message: `Create file suggested by Claude 3.5`,
+            content: Buffer.from(content).toString("base64"),
+            branch: pullRequest.head.ref
+          });
+        } else {
+          throw error;
+        }
+        throw error;
+      }
+      console.log("createOrUpdateFileContents", filePath);
+      core.info(`Updated ${filePath}`);
+    }
+  }
+  const { data: files } = await octokit.rest.pulls.listFiles({
     owner,
     repo,
-    issue_number: pull_number,
-    body: commentBody
+    pull_number
   });
-  core.info("Suggestions have been posted as a comment on the PR.");
-};
-function parseSuggestions(response) {
-  const suggestions = [];
-  let currentFile = null;
-  let currentCommit = null;
-  const lines = response.split("\n");
-  for (const line of lines) {
-    if (line.startsWith("File: ")) {
-      currentFile = line.slice(6).trim();
-    } else if (line.startsWith("Commit: ")) {
-      currentCommit = {
-        message: line.slice(8).trim(),
-        changes: []
-      };
-      suggestions.push(currentCommit);
-    } else if (line.startsWith("Lines ")) {
-      const match = line.match(/Lines (\d+-\d+): (.+)/);
-      if (match) {
-        const [, lineRange, suggestion] = match;
-        const change = { lineRange, suggestion };
-        if (currentCommit) {
-          currentCommit.changes.push({ file: currentFile, ...change });
-        } else {
-          suggestions.push({ file: currentFile, ...change });
-        }
-      } else {
-        console.warn(`Unexpected line format: ${line}`);
-      }
-    } else if (line === "END_OF_SUGGESTIONS") {
-      break;
-    }
-  }
-  return suggestions;
-}
-function formatSuggestionsComment(suggestions) {
-  let comment = "## Suggestions from Claude 3.5\n\n";
-  if (suggestions.length === 0) {
-    comment += "No changes are necessary based on the current request, or the request was unclear.\n";
+  if (files.length > 0) {
+    await octokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: pull_number,
+      body: "Changes suggested by Claude 3.5 have been applied to this PR based on the latest comment. Please review the changes."
+    });
   } else {
-    for (const suggestion of suggestions) {
-      if (suggestion.message) {
-        comment += `### Suggested Commit: ${suggestion.message}
-
-`;
-        for (const change of suggestion.changes) {
-          comment += `**File:** ${change.file}
-`;
-          comment += `**Lines ${change.lineRange}:** ${change.suggestion}
-
-`;
-        }
-      } else {
-        comment += `**File:** ${suggestion.file}
-`;
-        comment += `**Lines ${suggestion.lineRange}:** ${suggestion.suggestion}
-
-`;
-      }
-    }
+    core.info("No changes to commit.");
+    await octokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: pull_number,
+      body: "Claude 3.5 analyzed the latest comment and the repository content but did not suggest any changes."
+    });
   }
-  return comment;
-}
+};
 main();
 /*! Bundled license information:
 
