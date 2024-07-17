@@ -37316,12 +37316,17 @@ function parseSuggestions(response) {
       };
       suggestions.push(currentCommit);
     } else if (line.startsWith("Lines ")) {
-      const [, lineRange, suggestion] = line.match(/Lines (\d+-\d+): (.+)/);
-      const change = { lineRange, suggestion };
-      if (currentCommit) {
-        currentCommit.changes.push({ file: currentFile, ...change });
+      const match = line.match(/Lines (\d+-\d+): (.+)/);
+      if (match) {
+        const [, lineRange, suggestion] = match;
+        const change = { lineRange, suggestion };
+        if (currentCommit) {
+          currentCommit.changes.push({ file: currentFile, ...change });
+        } else {
+          suggestions.push({ file: currentFile, ...change });
+        }
       } else {
-        suggestions.push({ file: currentFile, ...change });
+        console.warn(`Unexpected line format: ${line}`);
       }
     } else if (line === "END_OF_SUGGESTIONS") {
       break;
