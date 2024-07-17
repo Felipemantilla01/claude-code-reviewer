@@ -78,7 +78,7 @@ const main = async () => {
       messages: [{ role: "user", content: initialPrompt }],
     });
 
-    core.info(`Anthropic response: ${message}`);
+    core.info(`Anthropic response: ${JSON.stringify(message, null, 2)}`);
 
 
     
