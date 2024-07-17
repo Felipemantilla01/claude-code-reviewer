@@ -37307,6 +37307,15 @@ ${pullRequest.body}`;
           path: filePath,
           ref: pullRequest.head.ref
         });
+        await octokit.rest.repos.createOrUpdateFileContents({
+          owner,
+          repo,
+          path: filePath,
+          message: `Apply changes suggested by Claude 3.5`,
+          content: Buffer.from(content).toString("base64"),
+          sha: fileData.sha,
+          branch: pullRequest.head.ref
+        });
       } catch (error) {
         throw error;
       }

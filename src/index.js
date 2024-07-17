@@ -105,16 +105,16 @@ const main = async () => {
           ref: pullRequest.head.ref,
         });
 
-        // // Update the file
-        // await octokit.rest.repos.createOrUpdateFileContents({
-        //   owner,
-        //   repo,
-        //   path: filePath,
-        //   message: `Apply changes suggested by Claude 3.5`,
-        //   content: Buffer.from(content).toString('base64'),
-        //   sha: fileData.sha,
-        //   branch: pullRequest.head.ref,
-        // });
+        // Update the file
+        await octokit.rest.repos.createOrUpdateFileContents({
+          owner,
+          repo,
+          path: filePath,
+          message: `Apply changes suggested by Claude 3.5`,
+          content: Buffer.from(content).toString('base64'),
+          sha: fileData.sha,
+          branch: pullRequest.head.ref,
+        });
       } catch (error) {
         // if (error.status === 404) {
         //   // File doesn't exist, so create it
