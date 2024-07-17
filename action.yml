@@ -5,4 +5,4 @@ branding:
   color: orange
 runs:
   using: 'node20'
-  main: 'action/index.cjs'
+  main: 'src/index.js'
