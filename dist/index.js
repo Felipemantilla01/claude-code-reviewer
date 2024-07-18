@@ -23449,7 +23449,13 @@ var require_utils5 = __commonJS({
     }
     var generatePrompt2 = (patch) => {
       const prompt = `Below is a code patch, please help me do a brief code review on it. Any bug risks and/or improvement suggestions are welcome
-  provide a small response pretty clear please. Thanks!
+  provide a small response pretty clear please, and do it in the next format : 
+
+  {
+    \xE7omment: "your comment here",
+    change_suggestion: "your suggestion here as code"
+    position: "start line number"
+  }
   `;
       return `${prompt}:
   ${patch}
@@ -37278,18 +37284,6 @@ var main = async () => {
         messages: [{ role: "user", content: prompt }]
       });
       console.log("[debug]: message:", JSON.stringify(message, null, 2));
-      const comment = message.content[0].text;
-      if (comment) {
-        await octokit.rest.pulls.createReviewComment({
-          repo,
-          owner,
-          pull_number,
-          commit_id: commits[commits.length - 1].sha,
-          path: file.filename,
-          body: comment,
-          position: patch.split("\n").length - 1
-        });
-      }
     } catch (e) {
       console.error(`review ${file.filename} failed`, e);
     }

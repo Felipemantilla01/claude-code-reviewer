@@ -48,7 +48,13 @@ function minifyContent(content) {
 const generatePrompt = (patch) => {
 
   const prompt = `Below is a code patch, please help me do a brief code review on it. Any bug risks and/or improvement suggestions are welcome
-  provide a small response pretty clear please. Thanks!
+  provide a small response pretty clear please, and do it in the next format : 
+
+  {
+    çomment: "your comment here",
+    change_suggestion: "your suggestion here as code"
+    position: "start line number"
+  }
   `;
 
   return `${prompt}:
