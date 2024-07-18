@@ -37330,6 +37330,14 @@ ${reviewFormatted.change_suggestion}
   }).catch((e) => {
     console.error("approve failed", e);
   });
+  await octokit.rest.issues.removeLabel({
+    owner,
+    repo,
+    issue_number: pull_number,
+    name: requiredLabel
+  }).catch((e) => {
+    console.error("remove label failed", e);
+  });
 };
 main().catch((err) => {
   console.error(err);

@@ -129,6 +129,16 @@ ${reviewFormatted.change_suggestion}
     console.error('approve failed', e);
   });
 
+  // remove label 
+  await octokit.rest.issues.removeLabel({
+    owner,
+    repo,
+    issue_number: pull_number,
+    name: requiredLabel,
+  }).catch(e => {
+    console.error('remove label failed', e);
+  });
+
 
 }
 
