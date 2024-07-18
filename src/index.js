@@ -39,7 +39,7 @@ const main = async () => {
   );
 
   if (!isRequiredLabelRequested) {
-    console.log(`Required label ${requiredReviewer} not requested. Skipping review.`);
+    console.log(`Required label ${requiredLabel} not requested. Skipping review.`);
     return;
   }
 
