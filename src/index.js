@@ -91,7 +91,7 @@ const main = async () => {
           commit_id: commits[commits.length - 1].sha,
           path: file.filename,
           body: `${reviewFormatted.comment}\n\n${reviewFormatted.change_suggestion}`,
-          position: reviewFormatted.position, //patch.split('\n').length - 1,
+          position: parseInt(reviewFormatted.position), //patch.split('\n').length - 1,
         });
       }
 

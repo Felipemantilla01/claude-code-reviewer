@@ -37299,7 +37299,7 @@ var main = async () => {
           body: `${reviewFormatted.comment}
 
 ${reviewFormatted.change_suggestion}`,
-          position: reviewFormatted.position
+          position: parseInt(reviewFormatted.position)
           //patch.split('\n').length - 1,
         });
       }
