@@ -37229,7 +37229,7 @@ var require_sdk = __commonJS({
 // src/index.js
 var core = require_core();
 var github = require_github();
-var { getRepositoryContent, minifyContent, codeReview } = require_utils5();
+var { getRepositoryContent, minifyContent, generatePrompt } = require_utils5();
 var Anthropic = require_sdk();
 var main = async () => {
   const token = core.getInput("github-token", { required: true });
@@ -37272,7 +37272,7 @@ var main = async () => {
       const prompt = await generatePrompt(patch);
       const message = await anthropic.messages.create({
         model: "claude-3-5-sonnet-20240620",
-        // max_tokens: 1024,
+        max_tokens: 1024,
         messages: [{ role: "user", content: prompt }]
       });
       console.log("[debug]: message:", JSON.stringify(message, null, 2));

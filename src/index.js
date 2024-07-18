@@ -1,6 +1,6 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { getRepositoryContent, minifyContent, codeReview } = require('./utils');
+const { getRepositoryContent, minifyContent, generatePrompt } = require('./utils');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const main = async () => {
@@ -70,7 +70,7 @@ const main = async () => {
 
       const message = await anthropic.messages.create({
         model: "claude-3-5-sonnet-20240620",
-        // max_tokens: 1024,
+        max_tokens: 1024,
         messages: [{ role: "user", content: prompt }],
       });
 
