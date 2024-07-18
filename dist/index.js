@@ -23448,7 +23448,9 @@ var require_utils5 = __commonJS({
       return content.replace(/\s+/g, " ").trim();
     }
     var generatePrompt2 = (patch) => {
-      const prompt = "Below is a code patch, please help me do a brief code review on it. Any bug risks and/or improvement suggestions are welcome:";
+      const prompt = `Below is a code patch, please help me do a brief code review on it. Any bug risks and/or improvement suggestions are welcome
+  provide a small response pretty clear please. Thanks!
+  `;
       return `${prompt}:
   ${patch}
   `;
