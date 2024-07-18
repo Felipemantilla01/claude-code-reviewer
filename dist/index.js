@@ -23447,7 +23447,13 @@ var require_utils5 = __commonJS({
     function minifyContent2(content) {
       return content.replace(/\s+/g, " ").trim();
     }
-    module2.exports = { getRepositoryContent: getRepositoryContent2, minifyContent: minifyContent2 };
+    var generatePrompt2 = (patch) => {
+      const prompt = "Below is a code patch, please help me do a brief code review on it. Any bug risks and/or improvement suggestions are welcome:";
+      return `${prompt}:
+  ${patch}
+  `;
+    };
+    module2.exports = { getRepositoryContent: getRepositoryContent2, minifyContent: minifyContent2, generatePrompt: generatePrompt2 };
   }
 });
 
@@ -37223,7 +37229,7 @@ var require_sdk = __commonJS({
 // src/index.js
 var core = require_core();
 var github = require_github();
-var { getRepositoryContent, minifyContent } = require_utils5();
+var { getRepositoryContent, minifyContent, codeReview } = require_utils5();
 var Anthropic = require_sdk();
 var main = async () => {
   const token = core.getInput("github-token", { required: true });
@@ -37255,6 +37261,25 @@ var main = async () => {
     head: pullRequest.head.sha
   });
   console.log("[debug]: compare Commits:", JSON.stringify(data, null, 2));
+  let { files: changedFiles, commits } = data.data;
+  for (let i = 0; i < changedFiles.length; i++) {
+    const file = changedFiles[i];
+    const patch = file.patch || "";
+    if (file.status !== "modified" && file.status !== "added") {
+      continue;
+    }
+    try {
+      const prompt = await generatePrompt(patch);
+      const message = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20240620",
+        // max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }]
+      });
+      console.log("[debug]: message:", JSON.stringify(message, null, 2));
+    } catch (e) {
+      console.error(`review ${file.filename} failed`, e);
+    }
+  }
 };
 main().catch((err) => {
   console.error(err);

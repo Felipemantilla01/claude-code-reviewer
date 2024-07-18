@@ -42,4 +42,16 @@ function minifyContent(content) {
   return content.replace(/\s+/g, ' ').trim();
 }
 
-module.exports = { getRepositoryContent, minifyContent };
+
+
+
+const generatePrompt = (patch) => {
+
+  const prompt = 'Below is a code patch, please help me do a brief code review on it. Any bug risks and/or improvement suggestions are welcome:';
+
+  return `${prompt}:
+  ${patch}
+  `;
+};
+
+module.exports = { getRepositoryContent, minifyContent, generatePrompt };

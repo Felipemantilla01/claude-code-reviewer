@@ -1,6 +1,6 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { getRepositoryContent, minifyContent } = require('./utils');
+const { getRepositoryContent, minifyContent, codeReview } = require('./utils');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const main = async () => {
@@ -39,7 +39,7 @@ const main = async () => {
     return 'invalid event payload';
   }
 
-  
+
 
 
   const data = await octokit.rest.repos.compareCommits({
@@ -52,7 +52,47 @@ const main = async () => {
   console.log('[debug]: compare Commits:', JSON.stringify(data, null, 2));
 
 
-  // let { files: changedFiles, commits } = data.data;
+  let { files: changedFiles, commits } = data.data;
+
+
+
+  for (let i = 0; i < changedFiles.length; i++) {
+    const file = changedFiles[i];
+    const patch = file.patch || '';
+
+    if (file.status !== 'modified' && file.status !== 'added') {
+      continue;
+    }
+
+
+    try {
+      const prompt = await generatePrompt(patch);
+
+      const message = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20240620",
+        // max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      console.log('[debug]: message:', JSON.stringify(message, null, 2));
+
+
+      // if (!!res) {
+      //   await octokit.rest.pulls.createReviewComment({
+      //     repo: repo,
+      //     owner: owner,
+      //     pull_number: pull_number,
+      //     commit_id: commits[commits.length - 1].sha,
+      //     path: file.filename,
+      //     body: res,
+      //     position: patch.split('\n').length - 1,
+      //   });
+      // }
+    } catch (e) {
+      console.error(`review ${file.filename} failed`, e);
+    }
+  }
+
 
 
 
