@@ -16,6 +16,8 @@ const main = async () => {
   });
 
   // getting PR data 
+  const requiredReviewer = 'felipemantilla-gorillalogic';
+
   const context = github.context;
   const { owner, repo } = context.repo;
   const pull_number = context.payload.pull_request ? context.payload.pull_request.number : context.payload.issue.number;
@@ -26,10 +28,26 @@ const main = async () => {
     repo,
     pull_number,
   });
-  core.info("Fetching repository content...");
 
   // console.log('[debug]: context:', JSON.stringify(context, null, 2));
-  // console.log('[debug]: pullRequest:', JSON.stringify(pullRequest, null, 2));
+  console.log('[debug]: pullRequest:', JSON.stringify(pullRequest, null, 2));
+
+
+  // Check if the required reviewer is requested
+  const isRequiredReviewerRequested = pullRequest.requested_reviewers.some(
+    reviewer => reviewer.login === requiredReviewer
+  );
+
+  if (!isRequiredReviewerRequested) {
+    console.log(`Required reviewer ${requiredReviewer} not requested. Skipping review.`);
+    return;
+  }
+
+
+  core.info("Fetching repository content...");
+
+  return;
+
 
   if (
     pullRequest.state === 'closed' ||
@@ -90,8 +108,8 @@ const main = async () => {
           pull_number: pull_number,
           commit_id: commits[commits.length - 1].sha,
           path: file.filename,
-          body:  
-`
+          body:
+            `
 ${reviewFormatted.comment}
 \`\`\`${reviewFormatted.change_suggestion_language}
 ${reviewFormatted.change_suggestion}
@@ -108,14 +126,17 @@ ${reviewFormatted.change_suggestion}
     }
   }
 
-  // await octokit.rest.pulls.createReview({
-  //   repo: repo,
-  //   owner: owner,
-  //   pull_number: pull_number,
-  //   commit_id: commits[commits.length - 1].sha,
-  //   event: 'APPROVE',
-  //   body: 'Code review completed successfully by Claude 3.5'
-  // })
+
+  await octokit.rest.pulls.createReview({
+    repo: repo,
+    owner: owner,
+    pull_number: pull_number,
+    commit_id: commits[commits.length - 1].sha,
+    event: 'APPROVE',
+    body: 'Code review completed successfully by Claude 3.5'
+  }).catch(e => {
+    console.error('approve failed', e);
+  });
 
 
 }

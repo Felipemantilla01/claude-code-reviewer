@@ -37251,6 +37251,7 @@ var main = async () => {
   const anthropic = new Anthropic({
     apiKey: anthropicApiKey
   });
+  const requiredReviewer = "felipemantilla-gorillalogic";
   const context = github.context;
   const { owner, repo } = context.repo;
   const pull_number = context.payload.pull_request ? context.payload.pull_request.number : context.payload.issue.number;
@@ -37260,7 +37261,16 @@ var main = async () => {
     repo,
     pull_number
   });
+  console.log("[debug]: pullRequest:", JSON.stringify(pullRequest, null, 2));
+  const isRequiredReviewerRequested = pullRequest.requested_reviewers.some(
+    (reviewer) => reviewer.login === requiredReviewer
+  );
+  if (!isRequiredReviewerRequested) {
+    console.log(`Required reviewer ${requiredReviewer} not requested. Skipping review.`);
+    return;
+  }
   core.info("Fetching repository content...");
+  return;
   if (pullRequest.state === "closed" || pullRequest.locked) {
     console.log("invalid event payload");
     return "invalid event payload";
@@ -37311,6 +37321,16 @@ ${reviewFormatted.change_suggestion}
       console.error(`review ${file.filename} failed`, e);
     }
   }
+  await octokit.rest.pulls.createReview({
+    repo,
+    owner,
+    pull_number,
+    commit_id: commits[commits.length - 1].sha,
+    event: "APPROVE",
+    body: "Code review completed successfully by Claude 3.5"
+  }).catch((e) => {
+    console.error("approve failed", e);
+  });
 };
 main().catch((err) => {
   console.error(err);
