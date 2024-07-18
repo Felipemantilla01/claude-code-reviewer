@@ -37290,6 +37290,20 @@ var main = async () => {
       const reviewFormatted = JSON.parse(comment);
       console.log("[debug]: reviewFormatted:", JSON.stringify(reviewFormatted, null, 2));
       if (reviewFormatted && reviewFormatted.hasReview) {
+        await octokit.rest.pulls.createReviewComment({
+          repo,
+          owner,
+          pull_number,
+          commit_id: commits[commits.length - 1].sha,
+          path: file.filename,
+          body: reviewFormatted.comment + `
+          
+          ${reviewFormatted.change_suggestion}
+          `,
+          position: parseInt(reviewFormatted.change_suggestion_line),
+          //patch.split('\n').length - 1,
+          side: "RIGHT"
+        });
       }
     } catch (e) {
       console.error(`review ${file.filename} failed`, e);
