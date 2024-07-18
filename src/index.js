@@ -83,18 +83,17 @@ const main = async () => {
       console.log('[debug]: reviewFormatted:', JSON.stringify(reviewFormatted, null, 2));
 
 
-      // const comment = message.content[0].text;
-      // if (comment) {
-      //   await octokit.rest.pulls.createReviewComment({
-      //     repo: repo,
-      //     owner: owner,
-      //     pull_number: pull_number,
-      //     commit_id: commits[commits.length - 1].sha,
-      //     path: file.filename,
-      //     body: comment,
-      //     position: patch.split('\n').length - 1,
-      //   });
-      // }
+      if (reviewFormatted) {
+        await octokit.rest.pulls.createReviewComment({
+          repo: repo,
+          owner: owner,
+          pull_number: pull_number,
+          commit_id: commits[commits.length - 1].sha,
+          path: file.filename,
+          body: `${reviewFormatted.comment}\n\n${reviewFormatted.change_suggestion}`,
+          position: reviewFormatted.position, //patch.split('\n').length - 1,
+        });
+      }
 
 
     } catch (e) {
