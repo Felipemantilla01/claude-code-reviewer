@@ -83,7 +83,7 @@ const main = async () => {
       console.log('[debug]: reviewFormatted:', JSON.stringify(reviewFormatted, null, 2));
 
 
-      if (reviewFormatted) {
+      if (reviewFormatted && reviewFormatted.hasReview) {
         await octokit.rest.pulls.createReviewComment({
           repo: repo,
           owner: owner,
@@ -92,8 +92,6 @@ const main = async () => {
           path: file.filename,
           body: reviewFormatted.comment + '\n\n``` \n' + reviewFormatted.change_suggestion + '\n```',
           position: parseInt(reviewFormatted.position), //patch.split('\n').length - 1,
-          // body: reviewFormatted.comment + '\n\n``` suggestion\n' + reviewFormatted.change_suggestion + '\n```',
-          // start_line: parseInt(reviewFormatted.position), //patch.split('\n').length - 1,
           side: 'RIGHT'
         });
       }

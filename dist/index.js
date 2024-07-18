@@ -23448,17 +23448,7 @@ var require_utils5 = __commonJS({
       return content.replace(/\s+/g, " ").trim();
     }
     var generatePrompt2 = (patch) => {
-      const prompt = `Below is a code patch, please help me do a brief code review on it. Any bug risks and/or improvement suggestions are welcome
-  provide a small response pretty clear please, and do it in the next format (will be parsed with JSON.parse): 
-
-  {
-    \xE7omment: "your comment here",
-    change_suggestion: "your suggestion here as code"
-    position: "start line number"
-  }
-
-  make sure to provide a clear and concise response, and make sure to make it possible to parse the result with JSON.parse.
-  `;
+      const prompt = 'Below is a code patch. Please perform a brief code review on it, identifying any bug risks and/or improvement suggestions. Provide a concise response in the following JSON format, ensuring it can be parsed with JSON.parse:\n\n{\n  "hasReview": true,\n  "comment": "your comment here",\n  "change_suggestion": "your suggestion here as code",\n  "position": "start line number"\n}\n\nIf the file has nothing to review, set `hasReview` to `false`.\n\nEnsure your response is clear and concise.';
       return `${prompt}:
   ${patch}
   `;
@@ -37286,7 +37276,7 @@ var main = async () => {
       const comment = message.content[0].text;
       const reviewFormatted = JSON.parse(comment);
       console.log("[debug]: reviewFormatted:", JSON.stringify(reviewFormatted, null, 2));
-      if (reviewFormatted) {
+      if (reviewFormatted && reviewFormatted.hasReview) {
         await octokit.rest.pulls.createReviewComment({
           repo,
           owner,
@@ -37296,8 +37286,6 @@ var main = async () => {
           body: reviewFormatted.comment + "\n\n``` \n" + reviewFormatted.change_suggestion + "\n```",
           position: parseInt(reviewFormatted.position),
           //patch.split('\n').length - 1,
-          // body: reviewFormatted.comment + '\n\n``` suggestion\n' + reviewFormatted.change_suggestion + '\n```',
-          // start_line: parseInt(reviewFormatted.position), //patch.split('\n').length - 1,
           side: "RIGHT"
         });
       }
