@@ -37297,7 +37297,7 @@ var main = async () => {
           pull_number,
           commit_id: commits[commits.length - 1].sha,
           path: file.filename,
-          body: reviewFormatted.comment + "\n\n``` \n" + reviewFormatted.change_suggestion + "\n```",
+          body: reviewFormatted.comment + reviewFormatted.change_suggestion,
           position: parseInt(reviewFormatted.position),
           //patch.split('\n').length - 1,
           side: "RIGHT"
