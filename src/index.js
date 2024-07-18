@@ -26,9 +26,9 @@ const main = async () => {
     repo,
     pull_number,
   });
-
   core.info("Fetching repository content...");
-  core.info('[debug]: pullRequest:', pullRequest);
+
+  core.info('[debug]: context:', JSON.stringify(context, null, 2));
   core.info('[debug]: pullRequest:', JSON.stringify(pullRequest, null, 2));
 
   const repoContent = await getRepositoryContent();
