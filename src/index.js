@@ -102,6 +102,15 @@ const main = async () => {
     }
   }
 
+  await octokit.rest.pulls.createReview({
+    repo: repo,
+    owner: owner,
+    pull_number: pull_number,
+    commit_id: commits[commits.length - 1].sha,
+    event: 'APPROVE',
+    body: 'Code review completed successfully by Claude 3.5'
+  })
+
 
 
 

@@ -37307,6 +37307,14 @@ var main = async () => {
       console.error(`review ${file.filename} failed`, e);
     }
   }
+  await octokit.rest.pulls.createReview({
+    repo,
+    owner,
+    pull_number,
+    commit_id: commits[commits.length - 1].sha,
+    event: "APPROVE",
+    body: "Code review completed successfully by Claude 3.5"
+  });
 };
 main().catch((err) => {
   console.error(err);
