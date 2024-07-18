@@ -37256,7 +37256,10 @@ var main = async () => {
   });
   console.log("[debug]: compare Commits:", JSON.stringify(data, null, 2));
 };
-main();
+main().catch((err) => {
+  console.error(err);
+  core.setFailed(err.message);
+});
 /*! Bundled license information:
 
 undici/lib/fetch/body.js:
