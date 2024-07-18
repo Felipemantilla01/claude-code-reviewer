@@ -37298,7 +37298,6 @@ var main = async () => {
       const comment = message.content[0].text;
       const reviewFormatted = JSON.parse(comment);
       console.log("[debug]: reviewFormatted:", JSON.stringify(reviewFormatted, null, 2));
-      return;
       if (reviewFormatted && reviewFormatted.hasReview) {
         await octokit.rest.pulls.createReviewComment({
           repo,

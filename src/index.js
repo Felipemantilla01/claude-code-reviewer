@@ -92,8 +92,6 @@ const main = async () => {
 
       console.log('[debug]: reviewFormatted:', JSON.stringify(reviewFormatted, null, 2));
 
-      return;
-
       if (reviewFormatted && reviewFormatted.hasReview) {
         await octokit.rest.pulls.createReviewComment({
           repo: repo,
