@@ -37242,6 +37242,7 @@ var main = async () => {
     pull_number
   });
   core.info("Fetching repository content...");
+  core.info("[debug]: pullRequest:", pullRequest);
   core.info("[debug]: pullRequest:", JSON.stringify(pullRequest, null, 2));
   const repoContent = await getRepositoryContent();
   const repoContentString = Object.entries(repoContent).map(([file, content]) => `File: ${file}
