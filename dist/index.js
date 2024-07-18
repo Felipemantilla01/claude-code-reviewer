@@ -37244,19 +37244,17 @@ var main = async () => {
   core.info("Fetching repository content...");
   console.log("[debug]: context:", JSON.stringify(context, null, 2));
   console.log("[debug]: pullRequest:", JSON.stringify(pullRequest, null, 2));
-  const repoContent = await getRepositoryContent();
-  const repoContentString = Object.entries(repoContent).map(([file, content]) => `File: ${file}
-
-${minifyContent(content)}`).join("\n\n---\n\n");
-  let promptText;
-  if (context.payload.comment) {
-    promptText = `Latest comment on the pull request:
-${context.payload.comment.body}`;
-  } else {
-    promptText = `Pull Request Description:
-${pullRequest.body}`;
+  if (pull_request.state === "closed" || pull_request.locked) {
+    console.log("invalid event payload");
+    return "invalid event payload";
   }
-  core.info(`[debug]: Prompt text: ${promptText}`);
+  const data = await octokit.repos.compareCommits({
+    owner,
+    repo,
+    base: pullRequest.base.sha,
+    head: pullRequest.head.sha
+  });
+  console.log("[debug]: compare Commits:", JSON.stringify(data, null, 2));
 };
 main();
 /*! Bundled license information:

@@ -31,21 +31,45 @@ const main = async () => {
   console.log('[debug]: context:', JSON.stringify(context, null, 2));
   console.log('[debug]: pullRequest:', JSON.stringify(pullRequest, null, 2));
 
-  const repoContent = await getRepositoryContent();
-
-  const repoContentString = Object.entries(repoContent)
-    .map(([file, content]) => `File: ${file}\n\n${minifyContent(content)}`)
-    .join('\n\n---\n\n');
-
-
-  let promptText;
-  if (context.payload.comment) {
-    promptText = `Latest comment on the pull request:\n${context.payload.comment.body}`;
-  } else {
-    promptText = `Pull Request Description:\n${pullRequest.body}`;
+  if (
+    pull_request.state === 'closed' ||
+    pull_request.locked
+  ) {
+    console.log('invalid event payload');
+    return 'invalid event payload';
   }
 
-  core.info(`[debug]: Prompt text: ${promptText}`);
+
+
+  const data = await octokit.repos.compareCommits({
+    owner: owner,
+    repo: repo,
+    base: pullRequest.base.sha,
+    head: pullRequest.head.sha,
+  });
+
+  console.log('[debug]: compare Commits:', JSON.stringify(data, null, 2));
+
+
+  // let { files: changedFiles, commits } = data.data;
+
+
+
+  // const repoContent = await getRepositoryContent();
+
+  // const repoContentString = Object.entries(repoContent)
+  //   .map(([file, content]) => `File: ${file}\n\n${minifyContent(content)}`)
+  //   .join('\n\n---\n\n');
+
+
+  // let promptText;
+  // if (context.payload.comment) {
+  //   promptText = `Latest comment on the pull request:\n${context.payload.comment.body}`;
+  // } else {
+  //   promptText = `Pull Request Description:\n${pullRequest.body}`;
+  // }
+
+  // core.info(`[debug]: Prompt text: ${promptText}`);
 
   // const initialPrompt = `
   //     You are an AI assistant tasked with suggesting changes to a GitHub repository based on a pull request comment or description.
@@ -54,10 +78,10 @@ const main = async () => {
 
   //     Repository content (minified):
   //     ${repoContentString}
-      
+
   //     Description/Comment:
   //     ${promptText}
-      
+
   //     <instructions>
   //     Based on the repository content and the provided text, suggest changes to the codebase. 
   //     Format your response as a series of git commands that can be executed to make the changes.
@@ -83,7 +107,7 @@ const main = async () => {
 
 
 
-  
+
 
 }
 
