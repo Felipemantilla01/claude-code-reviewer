@@ -77,17 +77,18 @@ const main = async () => {
       console.log('[debug]: message:', JSON.stringify(message, null, 2));
 
 
-      // if (!!res) {
-      //   await octokit.rest.pulls.createReviewComment({
-      //     repo: repo,
-      //     owner: owner,
-      //     pull_number: pull_number,
-      //     commit_id: commits[commits.length - 1].sha,
-      //     path: file.filename,
-      //     body: res,
-      //     position: patch.split('\n').length - 1,
-      //   });
-      // }
+      const comment = message.content[0].text;
+      if (comment) {
+        await octokit.rest.pulls.createReviewComment({
+          repo: repo,
+          owner: owner,
+          pull_number: pull_number,
+          commit_id: commits[commits.length - 1].sha,
+          path: file.filename,
+          body: comment,
+          position: patch.split('\n').length - 1,
+        });
+      }
     } catch (e) {
       console.error(`review ${file.filename} failed`, e);
     }
