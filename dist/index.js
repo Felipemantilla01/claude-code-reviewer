@@ -37295,8 +37295,9 @@ var main = async () => {
           path: file.filename,
           // body: `${reviewFormatted.comment}\n\n${reviewFormatted.change_suggestion}`,
           body: "\n\n``` suggestion\n" + reviewFormatted.change_suggestion + "\n```",
-          position: parseInt(reviewFormatted.position)
+          position: parseInt(reviewFormatted.position),
           //patch.split('\n').length - 1,
+          side: "RIGHT"
         });
       }
     } catch (e) {
