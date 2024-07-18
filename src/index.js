@@ -32,8 +32,8 @@ const main = async () => {
   console.log('[debug]: pullRequest:', JSON.stringify(pullRequest, null, 2));
 
   if (
-    pull_request.state === 'closed' ||
-    pull_request.locked
+    pullRequest.state === 'closed' ||
+    pullRequest.locked
   ) {
     console.log('invalid event payload');
     return 'invalid event payload';

@@ -37244,7 +37244,7 @@ var main = async () => {
   core.info("Fetching repository content...");
   console.log("[debug]: context:", JSON.stringify(context, null, 2));
   console.log("[debug]: pullRequest:", JSON.stringify(pullRequest, null, 2));
-  if (pull_request.state === "closed" || pull_request.locked) {
+  if (pullRequest.state === "closed" || pullRequest.locked) {
     console.log("invalid event payload");
     return "invalid event payload";
   }
