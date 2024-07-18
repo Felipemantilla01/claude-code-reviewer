@@ -37284,6 +37284,9 @@ var main = async () => {
         messages: [{ role: "user", content: prompt }]
       });
       console.log("[debug]: message:", JSON.stringify(message, null, 2));
+      const comment = message.content[0].text;
+      const reviewFormatted = JSON.parse(comment);
+      console.log("[debug]: reviewFormatted:", JSON.stringify(reviewFormatted, null, 2));
     } catch (e) {
       console.error(`review ${file.filename} failed`, e);
     }
