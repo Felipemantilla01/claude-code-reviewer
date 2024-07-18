@@ -37248,7 +37248,7 @@ var main = async () => {
     console.log("invalid event payload");
     return "invalid event payload";
   }
-  const data = await octokit.repos.compareCommits({
+  const data = await octokit.rest.repos.compareCommits({
     owner,
     repo,
     base: pullRequest.base.sha,
