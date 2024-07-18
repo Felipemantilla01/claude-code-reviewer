@@ -23450,17 +23450,16 @@ var require_utils5 = __commonJS({
     var generatePrompt2 = (patch) => {
       const prompt = `Below is a code patch. Please perform a brief code review on it, identifying any bug risks and/or improvement suggestions. Provide a concise response in the following JSON format, ensuring it can be parsed with JSON.parse:
 
-  \`\`\`
   {
     "hasReview": true,
     "comment": "your comment here",
     "change_suggestion": "your suggestion here as code",
+    "change_suggestion_line": "line number",
+    "change_suggestion_language": "programming language",
     "position": "start line number"
   }
-  \`\`\`
   
-  If the file has nothing to review, set \`hasReview\` to \`false\`.
-  the change_suggestion should be a code snippet that you would like to suggest so include the code within the backticks and include code language if possible. 
+  If the file has nothing to review, set hasReview to false.
   
   Ensure your response is clear and concise.`;
       return `${prompt}:
@@ -37291,30 +37290,11 @@ var main = async () => {
       const reviewFormatted = JSON.parse(comment);
       console.log("[debug]: reviewFormatted:", JSON.stringify(reviewFormatted, null, 2));
       if (reviewFormatted && reviewFormatted.hasReview) {
-        await octokit.rest.pulls.createReviewComment({
-          repo,
-          owner,
-          pull_number,
-          commit_id: commits[commits.length - 1].sha,
-          path: file.filename,
-          body: reviewFormatted.comment + reviewFormatted.change_suggestion,
-          position: parseInt(reviewFormatted.position),
-          //patch.split('\n').length - 1,
-          side: "RIGHT"
-        });
       }
     } catch (e) {
       console.error(`review ${file.filename} failed`, e);
     }
   }
-  await octokit.rest.pulls.createReview({
-    repo,
-    owner,
-    pull_number,
-    commit_id: commits[commits.length - 1].sha,
-    event: "APPROVE",
-    body: "Code review completed successfully by Claude 3.5"
-  });
 };
 main().catch((err) => {
   console.error(err);

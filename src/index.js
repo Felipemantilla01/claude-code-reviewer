@@ -84,16 +84,16 @@ const main = async () => {
 
 
       if (reviewFormatted && reviewFormatted.hasReview) {
-        await octokit.rest.pulls.createReviewComment({
-          repo: repo,
-          owner: owner,
-          pull_number: pull_number,
-          commit_id: commits[commits.length - 1].sha,
-          path: file.filename,
-          body: reviewFormatted.comment + reviewFormatted.change_suggestion,
-          position: parseInt(reviewFormatted.position), //patch.split('\n').length - 1,
-          side: 'RIGHT'
-        });
+        // await octokit.rest.pulls.createReviewComment({
+        //   repo: repo,
+        //   owner: owner,
+        //   pull_number: pull_number,
+        //   commit_id: commits[commits.length - 1].sha,
+        //   path: file.filename,
+        //   body: reviewFormatted.comment + reviewFormatted.change_suggestion,
+        //   position: parseInt(reviewFormatted.position), //patch.split('\n').length - 1,
+        //   side: 'RIGHT'
+        // });
       }
 
 
@@ -102,14 +102,14 @@ const main = async () => {
     }
   }
 
-  await octokit.rest.pulls.createReview({
-    repo: repo,
-    owner: owner,
-    pull_number: pull_number,
-    commit_id: commits[commits.length - 1].sha,
-    event: 'APPROVE',
-    body: 'Code review completed successfully by Claude 3.5'
-  })
+  // await octokit.rest.pulls.createReview({
+  //   repo: repo,
+  //   owner: owner,
+  //   pull_number: pull_number,
+  //   commit_id: commits[commits.length - 1].sha,
+  //   event: 'APPROVE',
+  //   body: 'Code review completed successfully by Claude 3.5'
+  // })
 
 
 }
