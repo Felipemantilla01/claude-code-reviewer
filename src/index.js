@@ -16,7 +16,7 @@ const main = async () => {
   });
 
   // getting PR data 
-  const requiredReviewer = 'felipemantilla-gorillalogic';
+  const requiredLabel = core.getInput('trigger-label', { required: true });
 
   const context = github.context;
   const { owner, repo } = context.repo;
@@ -34,20 +34,17 @@ const main = async () => {
 
 
   // Check if the required reviewer is requested
-  const isRequiredReviewerRequested = pullRequest.requested_reviewers.some(
-    reviewer => reviewer.login === requiredReviewer
+  const isRequiredLabelRequested = pullRequest.labels.some(
+    (label) => label.name === requiredLabel
   );
 
-  if (!isRequiredReviewerRequested) {
-    console.log(`Required reviewer ${requiredReviewer} not requested. Skipping review.`);
+  if (!isRequiredLabelRequested) {
+    console.log(`Required label ${requiredReviewer} not requested. Skipping review.`);
     return;
   }
 
 
   core.info("Fetching repository content...");
-
-  return;
-
 
   if (
     pullRequest.state === 'closed' ||
@@ -56,9 +53,6 @@ const main = async () => {
     console.log('invalid event payload');
     return 'invalid event payload';
   }
-
-
-
 
   const data = await octokit.rest.repos.compareCommits({
     owner: owner,
@@ -71,8 +65,6 @@ const main = async () => {
 
 
   let { files: changedFiles, commits } = data.data;
-
-
 
   for (let i = 0; i < changedFiles.length; i++) {
     const file = changedFiles[i];
@@ -100,6 +92,7 @@ const main = async () => {
 
       console.log('[debug]: reviewFormatted:', JSON.stringify(reviewFormatted, null, 2));
 
+      return;
 
       if (reviewFormatted && reviewFormatted.hasReview) {
         await octokit.rest.pulls.createReviewComment({

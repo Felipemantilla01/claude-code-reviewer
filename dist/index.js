@@ -37251,7 +37251,7 @@ var main = async () => {
   const anthropic = new Anthropic({
     apiKey: anthropicApiKey
   });
-  const requiredReviewer = "felipemantilla-gorillalogic";
+  const requiredLabel = core.getInput("trigger-label", { required: true });
   const context = github.context;
   const { owner, repo } = context.repo;
   const pull_number = context.payload.pull_request ? context.payload.pull_request.number : context.payload.issue.number;
@@ -37262,15 +37262,14 @@ var main = async () => {
     pull_number
   });
   console.log("[debug]: pullRequest:", JSON.stringify(pullRequest, null, 2));
-  const isRequiredReviewerRequested = pullRequest.requested_reviewers.some(
-    (reviewer) => reviewer.login === requiredReviewer
+  const isRequiredLabelRequested = pullRequest.labels.some(
+    (label) => label.name === requiredLabel
   );
-  if (!isRequiredReviewerRequested) {
-    console.log(`Required reviewer ${requiredReviewer} not requested. Skipping review.`);
+  if (!isRequiredLabelRequested) {
+    console.log(`Required label ${requiredReviewer} not requested. Skipping review.`);
     return;
   }
   core.info("Fetching repository content...");
-  return;
   if (pullRequest.state === "closed" || pullRequest.locked) {
     console.log("invalid event payload");
     return "invalid event payload";
@@ -37299,6 +37298,7 @@ var main = async () => {
       const comment = message.content[0].text;
       const reviewFormatted = JSON.parse(comment);
       console.log("[debug]: reviewFormatted:", JSON.stringify(reviewFormatted, null, 2));
+      return;
       if (reviewFormatted && reviewFormatted.hasReview) {
         await octokit.rest.pulls.createReviewComment({
           repo,
