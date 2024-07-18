@@ -23448,7 +23448,21 @@ var require_utils5 = __commonJS({
       return content.replace(/\s+/g, " ").trim();
     }
     var generatePrompt2 = (patch) => {
-      const prompt = 'Below is a code patch. Please perform a brief code review on it, identifying any bug risks and/or improvement suggestions. Provide a concise response in the following JSON format, ensuring it can be parsed with JSON.parse:\n\n{\n  "hasReview": true,\n  "comment": "your comment here",\n  "change_suggestion": "your suggestion here as code",\n  "position": "start line number"\n}\n\nIf the file has nothing to review, set `hasReview` to `false`.\n\nEnsure your response is clear and concise.';
+      const prompt = `Below is a code patch. Please perform a brief code review on it, identifying any bug risks and/or improvement suggestions. Provide a concise response in the following JSON format, ensuring it can be parsed with JSON.parse:
+
+  \`\`\`
+  {
+    "hasReview": true,
+    "comment": "your comment here",
+    "change_suggestion": "your suggestion here as code",
+    "position": "start line number"
+  }
+  \`\`\`
+  
+  If the file has nothing to review, set \`hasReview\` to \`false\`.
+  the change_suggestion should be a code snippet that you would like to suggest so include the code within the backticks and include code language if possible. 
+  
+  Ensure your response is clear and concise.`;
       return `${prompt}:
   ${patch}
   `;
