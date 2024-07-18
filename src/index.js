@@ -91,8 +91,9 @@ const main = async () => {
           commit_id: commits[commits.length - 1].sha,
           path: file.filename,
           // body: `${reviewFormatted.comment}\n\n${reviewFormatted.change_suggestion}`,
-          body: '\n\n``` suggestion\n' + reviewFormatted.change_suggestion + '\n```',
-          position: parseInt(reviewFormatted.position), //patch.split('\n').length - 1,
+          body: reviewFormatted.comment + '\n\n``` suggestion\n' + reviewFormatted.change_suggestion + '\n```',
+          // position: parseInt(reviewFormatted.position), //patch.split('\n').length - 1,
+          start_line: parseInt(reviewFormatted.position), //patch.split('\n').length - 1,
           side: 'RIGHT'
         });
       }
