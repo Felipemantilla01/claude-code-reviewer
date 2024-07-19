@@ -1,148 +1,142 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { getRepositoryContent, minifyContent, generatePrompt } = require('./utils');
-const Anthropic = require('@anthropic-ai/sdk');
+const { generatePrompt } = require('./utils');
+const aiReviewer = require('./aiReviewer');
 
-const main = async () => {
+async function main() {
+  try {
+    const { octokit, pullRequest, context } = await initialize();
 
-  // auth with github
+    if (!shouldProcessPullRequest(pullRequest)) {
+      return;
+    }
+
+    const changedFiles = await getChangedFiles(octokit, context, pullRequest);
+    await processChangedFiles(changedFiles, octokit, context, pullRequest);
+
+    await finalizePullRequest(octokit, context, pullRequest);
+  } catch (err) {
+    console.error(err);
+    core.setFailed(err.message);
+  }
+}
+
+async function initialize() {
   const token = core.getInput('github-token', { required: true });
-  const octokit = github.getOctokit(token)
+  const octokit = github.getOctokit(token);
 
-  // auth with anthropic
-  const anthropicApiKey = core.getInput('anthropic-api-key', { required: true });
-  const anthropic = new Anthropic({
-    apiKey: anthropicApiKey,
-  });
-
-  // getting PR data 
-  const requiredLabel = core.getInput('trigger-label', { required: true });
+  const provider = core.getInput('ai-provider', { required: false }) || 'anthropic';
+  aiReviewer.initialize(provider);
 
   const context = github.context;
   const { owner, repo } = context.repo;
-  const pull_number = context.payload.pull_request ? context.payload.pull_request.number : context.payload.issue.number;
+  const pull_number = context.payload.pull_request?.number || context.payload.issue.number;
 
   core.info("Fetching PR details...");
-  const { data: pullRequest } = await octokit.rest.pulls.get({
-    owner,
-    repo,
-    pull_number,
-  });
+  const { data: pullRequest } = await octokit.rest.pulls.get({ owner, repo, pull_number });
 
-  // console.log('[debug]: context:', JSON.stringify(context, null, 2));
-  console.log('[debug]: pullRequest:', JSON.stringify(pullRequest, null, 2));
+  return { octokit, pullRequest, context };
+}
 
-
-  // Check if the required reviewer is requested
-  const isRequiredLabelRequested = pullRequest.labels.some(
-    (label) => label.name === requiredLabel
-  );
+function shouldProcessPullRequest(pullRequest) {
+  const requiredLabel = core.getInput('trigger-label', { required: true });
+  const isRequiredLabelRequested = pullRequest.labels.some(label => label.name === requiredLabel);
 
   if (!isRequiredLabelRequested) {
     console.log(`Required label ${requiredLabel} not requested. Skipping review.`);
-    return;
+    return false;
   }
 
-
-  core.info("Fetching repository content...");
-
-  if (
-    pullRequest.state === 'closed' ||
-    pullRequest.locked
-  ) {
-    console.log('invalid event payload');
-    return 'invalid event payload';
+  if (pullRequest.state === 'closed' || pullRequest.locked) {
+    console.log('Invalid event payload');
+    return false;
   }
 
-  const data = await octokit.rest.repos.compareCommits({
-    owner: owner,
-    repo: repo,
+  return true;
+}
+
+async function getChangedFiles(octokit, context, pullRequest) {
+  const { owner, repo } = context.repo;
+  const { data } = await octokit.rest.repos.compareCommits({
+    owner,
+    repo,
     base: pullRequest.base.sha,
     head: pullRequest.head.sha,
   });
 
-  // console.log('[debug]: compare Commits:', JSON.stringify(data, null, 2));
-
-
-  let { files: changedFiles, commits } = data.data;
-
-  for (let i = 0; i < changedFiles.length; i++) {
-    const file = changedFiles[i];
-    const patch = file.patch || '';
-
-    if (file.status !== 'modified' && file.status !== 'added') {
-      continue;
-    }
-
-
-    try {
-      const prompt = await generatePrompt(patch);
-
-      const message = await anthropic.messages.create({
-        model: "claude-3-5-sonnet-20240620",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      });
-
-      console.log('[debug]: message:', JSON.stringify(message, null, 2));
-
-      const comment = message.content[0].text;
-
-      const reviewFormatted = JSON.parse(comment);
-
-      console.log('[debug]: reviewFormatted:', JSON.stringify(reviewFormatted, null, 2));
-
-      if (reviewFormatted && reviewFormatted.hasReview) {
-        await octokit.rest.pulls.createReviewComment({
-          repo: repo,
-          owner: owner,
-          pull_number: pull_number,
-          commit_id: commits[commits.length - 1].sha,
-          path: file.filename,
-          body:
-            `
-${reviewFormatted.comment}
-\`\`\`${reviewFormatted.change_suggestion_language}
-${reviewFormatted.change_suggestion}
-\`\`\`
-`,
-          position: parseInt(reviewFormatted.change_suggestion_line), //patch.split('\n').length - 1,
-          side: 'RIGHT'
-        });
-      }
-
-
-    } catch (e) {
-      console.error(`review ${file.filename} failed`, e);
-    }
-  }
-
-
-  await octokit.rest.pulls.createReview({
-    repo: repo,
-    owner: owner,
-    pull_number: pull_number,
-    commit_id: commits[commits.length - 1].sha,
-    event: 'APPROVE',
-    body: 'Code review completed successfully by Claude 3.5'
-  }).catch(e => {
-    console.error('approve failed', e);
-  });
-
-  // remove label 
-  await octokit.rest.issues.removeLabel({
-    owner,
-    repo,
-    issue_number: pull_number,
-    name: requiredLabel,
-  }).catch(e => {
-    console.error('remove label failed', e);
-  });
-
-
+  return { files: data.files, commits: data.commits };
 }
 
-main().catch(err => {
-  console.error(err);
-  core.setFailed(err.message);
-})
+async function processChangedFiles(changedFiles, octokit, context, pullRequest) {
+  const { files, commits } = changedFiles;
+
+  for (const file of files) {
+    if (file.status !== 'modified' && file.status !== 'added') continue;
+
+    try {
+      const prompt = generatePrompt(file.patch || '', file.filename);
+      const reviewFormatted = await aiReviewer.getReview(prompt);
+
+      if (reviewFormatted && reviewFormatted.hasReview) {
+        await createReviewComments(octokit, context, pullRequest, file, reviewFormatted, commits);
+      }
+    } catch (e) {
+      console.error(`Review for ${file.filename} failed`, e);
+    }
+  }
+}
+
+async function createReviewComments(octokit, context, pullRequest, file, reviewFormatted, commits) {
+  const { owner, repo } = context.repo;
+  
+  for (const review of reviewFormatted.reviews) {
+    const body = `
+**${review.category.toUpperCase()} - Severity: ${review.severity}**
+
+${review.comment}
+
+${review.suggestion ? `Suggestion:
+\`\`\`${review.language}
+${review.suggestion}
+\`\`\`` : ''}
+`;
+
+    await octokit.rest.pulls.createReviewComment({
+      repo,
+      owner,
+      pull_number: pullRequest.number,
+      commit_id: commits[commits.length - 1].sha,
+      path: file.filename,
+      body: body,
+      line: review.lineNumber,
+      side: 'RIGHT'
+    });
+  }
+}
+
+async function finalizePullRequest(octokit, context, pullRequest) {
+  const { owner, repo } = context.repo;
+  const requiredLabel = core.getInput('trigger-label', { required: true });
+
+  try {
+    await octokit.rest.pulls.createReview({
+      repo,
+      owner,
+      pull_number: pullRequest.number,
+      commit_id: pullRequest.head.sha,
+      event: 'APPROVE',
+      body: 'Code review completed successfully by AI Assistant'
+    });
+
+    await octokit.rest.issues.removeLabel({
+      owner,
+      repo,
+      issue_number: pullRequest.number,
+      name: requiredLabel,
+    });
+  } catch (e) {
+    console.error('Finalizing pull request failed', e);
+  }
+}
+
+main();
