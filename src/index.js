@@ -140,6 +140,14 @@ async function finalizePullRequest(octokit, context, pullRequest) {
   const requiredLabel = core.getInput('trigger-label', { required: true });
 
   try {
+    core.info(`Removing label: ${requiredLabel}`);
+    await octokit.rest.issues.removeLabel({
+      owner,
+      repo,
+      issue_number: pullRequest.number,
+      name: requiredLabel,
+    });
+
     core.info('Approving pull request');
     await octokit.rest.pulls.createReview({
       repo,
@@ -149,14 +157,7 @@ async function finalizePullRequest(octokit, context, pullRequest) {
       event: 'APPROVE',
       body: 'Code review completed successfully by AI Assistant'
     });
-
-    core.info(`Removing label: ${requiredLabel}`);
-    await octokit.rest.issues.removeLabel({
-      owner,
-      repo,
-      issue_number: pullRequest.number,
-      name: requiredLabel,
-    });
+    
   } catch (e) {
     core.error(`Finalizing pull request failed: ${e.message}`);
   }
