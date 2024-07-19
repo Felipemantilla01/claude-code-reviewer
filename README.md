@@ -59,3 +59,4 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           trigger-label: 'ai-review'
+```

@@ -1,24 +1,30 @@
-
-const generatePrompt = (patch) => {
-
-  const prompt = `Below is a code patch. Please perform a brief code review on it, identifying any bug risks and/or improvement suggestions. Provide a concise response in the following JSON format, ensuring it can be parsed with JSON.parse:
+const generatePrompt = (patch, fileName) => {
+  const prompt = `Perform a concise code review on the following patch from file "${fileName}". Identify potential bugs, security risks, and suggest improvements for code quality, performance, or best practices. Respond in the following JSON format:
 
   {
-    "hasReview": true,
-    "comment": "your comment here",
-    "change_suggestion": "your suggestion here as code",
-    "change_suggestion_line": "line number",
-    "change_suggestion_language": "programming language",
-    "position": "start line number"
+    "hasReview": boolean,
+    "reviews": [
+      {
+        "comment": "Concise explanation of the issue or suggestion",
+        "suggestion": "Code suggestion if applicable, otherwise null",
+        "lineNumber": number,
+        "language": "Programming language of the file",
+        "severity": "low|medium|high",
+        "category": "bug|security|performance|style|best_practice"
+      }
+    ]
   }
-  
-  If the file has nothing to review, set hasReview to false.
-  
-  Ensure your response is clear and concise.`;
 
-  return `${prompt}:
-  ${patch}
-  `;
+  Guidelines:
+  1. Set "hasReview" to false if there's nothing significant to review.
+  2. Provide up to 3 most important reviews, prioritizing by severity and impact.
+  3. Make comments clear, specific, and actionable.
+  4. For suggestions, provide only the changed lines of code.
+  5. Ensure the JSON is valid and can be parsed with JSON.parse().
+  6. Do not include any text outside the JSON structure.
+
+  Patch:
+  ${patch}`;
+
+  return prompt;
 };
-
-module.exports = { generatePrompt };
