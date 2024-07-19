@@ -1,7 +1,7 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 const { generatePrompt } = require('./utils');
-const aiReviewer = require('./aiReviewer');
+const aiReviewer = require('./ai');
 
 async function main() {
   try {
