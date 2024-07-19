@@ -37,7 +37,7 @@ Make sure to set up the following secrets in your repository:
 
 - `GITHUB_TOKEN`: Automatically provided by GitHub Actions
 - `ANTHROPIC_API_KEY`: Your Anthropic API key (if required)
-- `OPENAI_API_KEY`: Your Anthropic API key (if required)
+- `OPENAI_API_KEY`: Your OpenAI API key (if required)
 
 ## Workflow Example
 
@@ -58,5 +58,5 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-          trigger-label: 'ai-review'
+          trigger-label: 'mo-review'
 ```

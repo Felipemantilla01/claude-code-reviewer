@@ -28,3 +28,5 @@ const generatePrompt = (patch, fileName) => {
 
   return prompt;
 };
+
+export { generatePrompt };
